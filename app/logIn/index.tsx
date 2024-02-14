@@ -1,23 +1,25 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { inputName, inputKey } from '../../slices/loginSlice';
+import { inputUserId } from '../../slices/loginSlice';
 import { useDispatch } from 'react-redux';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import { firebaseConfig } from '@/constants/values';
 
-const SplashScreenComponent = () => {
+const app = initializeApp(firebaseConfig);
 
-  const app = initializeApp(firebaseConfig);
+const SplashScreenComponent = () => {
 
   const dispatch = useDispatch();
   const auth = getAuth(app);
 
-  useEffect(() => {
-    dispatch(inputName('Mayank'));
-    dispatch(inputKey(15));
-  }, []);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+
+  const { userId } = useSelector((state: any) => state.login);
 
   const navigateToSignUp = () => {
     router.push('/signUp/');
@@ -27,33 +29,77 @@ const SplashScreenComponent = () => {
     router.push('/homePage/');
   }
 
-  const login = () => {
-    signInWithEmailAndPassword(auth, 'jane.doe@example.com', 'SuperSecretPassword!')
-      .then(() => {
+  const handleLogin = () => {
+    signInWithEmailAndPassword(auth, username, password)
+      .then((userCredential) => {
         console.log('User signed in!');
+        dispatch(inputUserId(userCredential.user.uid));
         navigateToHomePage();
+        clearStates();
       })
       .catch(error => {
-        console.error(error);
+        setError(error);
       });
   }
+
+  const handleSignUp = () => {
+    clearStates();
+    navigateToSignUp();
+  }
+
+  const clearStates = () => {
+    setUsername('');
+    setPassword('');
+    setError(null);
+  }
+
+  useEffect(() => {
+    if (error) {
+      console.log('Error:', error);
+      alert(error);
+      setError(null);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (userId) {
+      setTimeout(() => {
+        navigateToHomePage();
+      }, 2000);
+      console.log('userId:', userId);
+    }
+  }, []);
 
   return (
 
     <View style={styles.container}>
-      <View style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.header}>
         <Text style={styles.title}>Lets Connect</Text>
-        <Text style={styles.text}>with each other</Text>
-        <TouchableOpacity
-          style={{ ...styles.button, backgroundColor: '#FF6F61' }}
-          onPress={() => navigateToSignUp()}>
-          <Text style={styles.insideButtonText}>Sign Up</Text>
+        <Text style={styles.subtitle}>Join or sign in to your account</Text>
+      </View>
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          value={username}
+          onChangeText={setUsername}
+          placeholder="Username or Email"
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          secureTextEntry={true}
+          autoCapitalize="none"
+        />
+      </View>
+      <View style={styles.buttons}>
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={{ ...styles.button, backgroundColor: '#FF6F61' }}
-          onPress={() => login()}>
-          <Text style={styles.insideButtonText}>Login</Text>
+        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+          <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -64,45 +110,56 @@ const SplashScreenComponent = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexDirection: 'column',
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 20,
   },
-  image: {
-    height: '50%',
-    width: '80%',
-    flex: 0.3,
-    marginBottom: 10,
-    aspectRatio: 1,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-    justifyContent: 'flex-start',
-    verticalAlign: 'top',
+  header: {
+    alignItems: 'center',
+    marginBottom: 30,
   },
   title: {
-    fontSize: 40,
-    fontFamily: 'sans-serif',
+    fontSize: 32,
     fontWeight: 'bold',
-    marginTop: 20,
+    color: '#333',
   },
-  text: {
-    fontFamily: 'sans-serif',
-    fontSize: 24,
+  subtitle: {
+    fontSize: 16,
+    color: '#777',
+  },
+  form: {
+    marginVertical: 20,
+  },
+  input: {
+    height: 40,
+    padding: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 10,
+  },
+  buttons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
   button: {
-    height: '7%',
-    width: '80%',
-    marginTop: 60,
-    marginBottom: 40,
+    backgroundColor: '#007bff',
+    padding: 10,
     borderRadius: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  insideButtonText: {
-    fontFamily: 'sans-serif',
-    color: 'white',
+  buttonText: {
+    color: '#fff',
     fontSize: 16,
-  }
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  footer: {
+    alignItems: 'center',
+  },
+  footerText: {
+    color: '#999',
+    fontSize: 14,
+  },
 });
 
 export default SplashScreenComponent;

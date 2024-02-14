@@ -1,27 +1,23 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface LoginState {
-  name: string;
-  key: number;
+  userId : String
 }
 
 const initialState: LoginState = {
-  name: localStorage.getItem('name') || 'Hello',
-  key: localStorage.getItem('key') ? Number(localStorage.getItem('key')) : 0,
+  userId: localStorage.getItem('userId') || '',
 };
 
 const loginSlice = createSlice({
   name: 'login',
   initialState : initialState,
   reducers: {
-    inputName(state, action: PayloadAction<string>){
-      state.name = action.payload;
-    },
-    inputKey(state, action : PayloadAction<number>) {
-      state.key = action.payload
+    inputUserId(state, action: PayloadAction<string>){
+      state.userId = action.payload;
+      localStorage.setItem('userId', action.payload);
     },
   },
 });
 
-export const { inputName, inputKey } = loginSlice.actions;
+export const { inputUserId } = loginSlice.actions;
 export default loginSlice.reducer;
